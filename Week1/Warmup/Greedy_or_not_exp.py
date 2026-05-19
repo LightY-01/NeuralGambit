@@ -1,25 +1,16 @@
-# Using Memory
-import sys
-sys.setrecursionlimit(6000) 
-
+# Brute Force: O(2^n)
 n = int(input())
 nums = list(map(int, input().split()))
-
-mem = [[None]*n for _ in range(n)]
 
 
 def best_score(l, r):
     if l == r:
         return nums[l]
-    if mem[l][r] != None:
-        return mem[l][r]
     
     left = nums[l] - best_score(l + 1, r)
     right = nums[r] - best_score(l, r - 1)
     
-    mem[l][r] = max(left, right)
-    
-    return mem[l][r]
+    return max(left, right)
 
 
 diff = best_score(0, n - 1)
