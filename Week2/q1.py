@@ -11,6 +11,8 @@ logging.basicConfig(format='%(levelname)s - %(asctime)s - %(message)s', datefmt=
 strategy_dict_x = {}
 strategy_dict_o = {}
 
+def list_to_str(l: list[int]) -> str:
+    return "".join(map(str, l))
 
 class History:
     def __init__(self, history=None):
@@ -76,31 +78,74 @@ class History:
     def is_win(self):
         # check if the board position is a win for either players
         # Feel free to implement this in anyway if needed
-        pass
+        if ((self.board[0] == self.board[1] == self.board[2] and self.board[0] != '0') or 
+            (self.board[3] == self.board[4] == self.board[5] and self.board[3] != '0') or 
+            (self.board[6] == self.board[7] == self.board[8] and self.board[6] != '0') or 
+            (self.board[0] == self.board[3] == self.board[6] and self.board[0] != '0') or 
+            (self.board[1] == self.board[4] == self.board[7] and self.board[1] != '0') or 
+            (self.board[2] == self.board[5] == self.board[8] and self.board[2] != '0') or 
+            (self.board[0] == self.board[4] == self.board[8] and self.board[0] != '0') or 
+            (self.board[2] == self.board[4] == self.board[6] and self.board[2] != '0')):
+            return True
+        return False
 
     def is_draw(self):
         # check if the board position is a draw
         # Feel free to implement this in anyway if needed
-        pass
+        if ((len(self.history) == 9) and (not self.is_win())):
+            return True
+        return False
 
     def get_valid_actions(self):
         # get the empty squares from the board
         # Feel free to implement this in anyway if needed
-        pass
+        valid_actions = []
+        for i in range(len(self.board)):
+            if (self.board[i] == '0'):
+                valid_actions.append(i)
+        return valid_actions
 
     def is_terminal_history(self):
         # check if the history is a terminal history
         # Feel free to implement this in anyway if needed
-        pass
+        if ((len(self.history) == 9) or self.is_win()):
+            return True
+        return False
 
     def get_utility_given_terminal_history(self):
         # Feel free to implement this in anyway if needed
-        pass
+        # if self.is_win():
+        #     if self.player == 'x':
+        #         return 1
+        #     else:
+        #         return -1
+        # return 0
+        if ((self.board[0] == self.board[1] == self.board[2] and self.board[0] == 'x') or 
+            (self.board[3] == self.board[4] == self.board[5] and self.board[3] == 'x') or 
+            (self.board[6] == self.board[7] == self.board[8] and self.board[6] == 'x') or 
+            (self.board[0] == self.board[3] == self.board[6] and self.board[0] == 'x') or 
+            (self.board[1] == self.board[4] == self.board[7] and self.board[1] == 'x') or 
+            (self.board[2] == self.board[5] == self.board[8] and self.board[2] == 'x') or 
+            (self.board[0] == self.board[4] == self.board[8] and self.board[0] == 'x') or 
+            (self.board[2] == self.board[4] == self.board[6] and self.board[2] == 'x')):
+            return 1
+        elif ((self.board[0] == self.board[1] == self.board[2] and self.board[0] == 'o') or 
+            (self.board[3] == self.board[4] == self.board[5] and self.board[3] == 'o') or 
+            (self.board[6] == self.board[7] == self.board[8] and self.board[6] == 'o') or 
+            (self.board[0] == self.board[3] == self.board[6] and self.board[0] == 'o') or 
+            (self.board[1] == self.board[4] == self.board[7] and self.board[1] == 'o') or 
+            (self.board[2] == self.board[5] == self.board[8] and self.board[2] == 'o') or 
+            (self.board[0] == self.board[4] == self.board[8] and self.board[0] == 'o') or 
+            (self.board[2] == self.board[4] == self.board[6] and self.board[2] == 'o')):
+            return -1
+        return 0
 
     def update_history(self, action):
         # In case you need to create a deepcopy and update the history obj to get the next history object.
         # Feel free to implement this in anyway if needed
-        pass
+        new_h = copy.deepcopy(self.history)
+        new_h.append(action)
+        return History(new_h)
 
 
 def backward_induction(history_obj):
@@ -109,7 +154,6 @@ def backward_induction(history_obj):
     :return: best achievable utility (float) for th current history_obj
     """
     global strategy_dict_x, strategy_dict_o
-    # TODO implement
     # (1) Implement backward induction for tictactoe
     # (2) Update the global variables strategy_dict_x or strategy_dict_o which are a mapping from histories to
     # probability distribution over actions.
@@ -122,8 +166,43 @@ def backward_induction(history_obj):
     # actions. But since tictactoe is a PIEFG, there always exists an optimal deterministic strategy (SPNE). So your
     # policy will be something like this {"0": 1, "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0, "8": 0} where
     # "0" was the one of the best actions for the current player/history.
-    return -2
-    # TODO implement
+    if (history_obj.is_terminal_history()):
+        return history_obj.get_utility_given_terminal_history()
+
+    key = list_to_str(history_obj.history)
+
+    if (history_obj.player == 'x'):
+        best_utility = -math.inf
+        best_action = None
+        for a in history_obj.get_valid_actions():
+            utility = backward_induction(history_obj.update_history(a))
+            # best_utility = max(best_utility, utility)
+            # if(best_utility == utility):
+            #     best_action = a
+            if (utility > best_utility):
+                best_utility = utility
+                best_action = a
+
+        best_avector = {"0": 0, "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0, "8": 0}
+        best_avector[str(best_action)] = 1
+        strategy_dict_x[key] = best_avector
+        
+    if (history_obj.player == 'o'):
+        best_utility = math.inf
+        best_action = None
+        for a in history_obj.get_valid_actions():
+            utility = backward_induction(history_obj.update_history(a))
+            # best_utility = min(best_utility, utility)
+            # if(best_utility == utility):
+            #     best_action = a
+            if (utility < best_utility):
+                best_utility = utility
+                best_action = a
+
+        best_avector = {"0": 0, "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0, "8": 0}
+        best_avector[str(best_action)] = 1
+        strategy_dict_o[key] = best_avector
+    return best_utility
 
 
 def solve_tictactoe():
